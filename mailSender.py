@@ -6,20 +6,22 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from flask import Flask
+from werkzeug.utils import secure_filename
 
 MAIL = "vagas@alfadiagnostica.com.br"
+EXTENSIONS = ['pdf']
 
 app = Flask(__name__)
 
 @app.route('/', methods=['POST'])
-def getCurriculum():
+def main_func():
 	# GetData
 
 	nome = "Joao Guilherme"
 	area = "Informatica"
 	corpo = "Ola, aqui esta meu curriculo, espero que me contratem"
 
-	response = sendMail(nome, area, corpo)
+	response = send_mail(nome, area, corpo)
 
 	if response == 0:
 		return {
@@ -32,8 +34,12 @@ def getCurriculum():
 			"body": "Houve um problema ao enviar seu currículo"
 		}
 
+def get_pdf(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in EXTENSIONS
 
-def sendMail(nome, area, corpo):
+
+def send_mail(nome, area, corpo):
 	subject = "Novo currículo de: {}, Área: {}".format(nome, area)
 	body = "Mensagem automatizada.\n\nTexto enviado por: {}\n\n{}".format(nome, corpo)
 	password = input("Senha fora do GCP: ") # Alterar para variavel no GCP
