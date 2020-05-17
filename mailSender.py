@@ -1,4 +1,4 @@
-import email, smtplib, ssl
+import email, smtplib, ssl, os
 
 from email import encoders
 from email.mime.base import MIMEBase
@@ -15,7 +15,13 @@ app = Flask(__name__)
 def main_func():
 
 	# Getting the request information
-	file = get_secure_file()	
+	file = get_secure_file()
+	if file == None:
+		return {
+			"status": 404,
+			"body": "Há algo de errado no arquivo que você está tentando enviar"
+		}
+
 	name = request.form['name'] 
 	area = request.form['area']
 	message = request.form['message']
@@ -40,12 +46,12 @@ def main_func():
 def send_mail(name, area, message, file):
 	subject = "Novo currículo de: {}, Área: {}".format(name, area)
 	body = "Mensagem automatizada.\n\nTexto enviado por: {}\n\n{}".format(name, message)
-	password = input("Senha fora do GCP: ") # Alterar para variavel no GCP
+	password = os.environ.get("PASSWORD") 
 
 	# Create a multipart message and set headers
 	message = MIMEMultipart()
-	message["From"] = MAIL 
-	message["To"] = MAIL 
+	message["From"] = os.environ.get("MAIL") 
+	message["To"] = os.environ.get("MAIL")
 	message["Subject"] = subject
 
 	# Add body to email
@@ -81,12 +87,12 @@ def send_mail(name, area, message, file):
 	return 0
 
 # Gets the file from the request
-# Returns either a secure filename and the file
-# Or a "" and None. Meaning there was an error in the file retrieval
+# Returns the file or an Error 
 def get_secure_file():
 	file = request.files['file']
 
+	# Check if filename has a trusted extension
 	if file and ('.' in file.filename and file.filename.rsplit(".", 1)[1].lower() in EXTENSIONS):
 		return file
 	
-	return ("", None)
+	return None
