@@ -5,18 +5,15 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from flask import Flask, request
-
-MAIL = "vagas@alfadiagnostica.com.br"
 EXTENSIONS = ['pdf']
-app = Flask(__name__)
+MAIL = os.environ.get("MAIL")
+PASSWORD = os.environ.get("PASSWORD") 
+SMTPSERVER = os.environ.get("SMTPSERVER") 
 
-@app.route('/', methods=['POST'])
-def main_func():
-
+def main_func(request):
 	# Getting the request information
-	file = get_secure_file()
-	if file == None:
+	trustedFile = get_secure_file(request.files['file'])
+	if trustedFile == None:
 		return {
 			"status": 404,
 			"body": "Há algo de errado no arquivo que você está tentando enviar"
@@ -27,7 +24,7 @@ def main_func():
 	message = request.form['message']
 
 	# Sending mail through send_mail function
-	response = send_mail(name, area, message, file)
+	response = send_mail(name, area, message, trustedFile)
 
 	# JSON response
 	if response == 0:
@@ -43,15 +40,15 @@ def main_func():
 
 
 
-def send_mail(name, area, message, file):
+def send_mail(name, area, message, trustedFile):
 	subject = "Novo currículo de: {}, Área: {}".format(name, area)
 	body = "Mensagem automatizada.\n\nTexto enviado por: {}\n\n{}".format(name, message)
-	password = os.environ.get("PASSWORD") 
+	
 
 	# Create a multipart message and set headers
 	message = MIMEMultipart()
-	message["From"] = os.environ.get("MAIL") 
-	message["To"] = os.environ.get("MAIL")
+	message["From"] = MAIL
+	message["To"] = MAIL
 	message["Subject"] = subject
 
 	# Add body to email
@@ -64,7 +61,7 @@ def send_mail(name, area, message, file):
 	# Add file as application/octet-stream
 	# Email client can usually download this automatically as attachment
 	part = MIMEBase("application", "octet-stream")
-	part.set_payload(file.read())
+	part.set_payload(trustedFile.read())
 
 	# Encode file in ASCII characters to send by email    
 	encoders.encode_base64(part)
@@ -81,18 +78,15 @@ def send_mail(name, area, message, file):
 
 	# Log in to server using secure context and send email
 	context = ssl.create_default_context()
-	with smtplib.SMTP_SSL("echo.mxrouting.net", 465, context=context) as server:
-		server.login(MAIL, password)
+	with smtplib.SMTP_SSL(SMTPSERVER, 465, context=context) as server:
+		server.login(MAIL, PASSWORD)
 		server.sendmail(MAIL, MAIL, text)
 	return 0
 
-# Gets the file from the request
-# Returns the file or an Error 
-def get_secure_file():
-	file = request.files['file']
-
+# Gets the file from the request and check safety
+def get_secure_file(trustedFile):
 	# Check if filename has a trusted extension
-	if file and ('.' in file.filename and file.filename.rsplit(".", 1)[1].lower() in EXTENSIONS):
-		return file
+	if trustedFile and ('.' in trustedFile.filename and trustedFile.filename.rsplit(".", 1)[1].lower() in EXTENSIONS):
+		return trustedFile
 	
 	return None
