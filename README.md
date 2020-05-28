@@ -5,13 +5,5 @@
 ## Enviando emails com python
 - https://realpython.com/python-send-email/
 
-## Guia para mandar pdf por post?
-- Preciso gatinhos
-
-## Video - Lidando com Cloud Functions
-- Descobrir, gatinhos
-
 ## Documentação Cloud Functions
 - https://cloud.google.com/functions/docs
-
-
